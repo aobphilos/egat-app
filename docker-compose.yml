@@ -1,0 +1,75 @@
+version: '3.3'
+
+services:
+  # api:
+  #   build:
+  #     context: .
+  #   image: egat-app
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: api
+  #     PORT: 3700
+  #   depends_on:
+  #     - redis
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.routers.api-gw.rule=PathPrefix(`/`)'
+  #     - 'traefik.http.services.api-gw.loadbalancer.server.port=3700'
+  #   networks:
+  #     - internal
+
+  # greeter:
+  #   build:
+  #     context: .
+  #   image: egat-app
+  #   env_file: docker-compose.env
+  #   environment:
+  #     SERVICES: 'egat,plant'
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - internal
+
+  # redis:
+  #   image: redis:alpine
+  #   networks:
+  #     - internal
+
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: iL8oK8gQ3yZ5
+      POSTGRES_DB: egat
+    networks:
+      - internal
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.services.database.loadbalancer.server.port=5432'
+
+  # traefik:
+  #   image: traefik:v2.2
+  #   command:
+  #     - '--api.insecure=false' # Don't do that in production!
+  #     - '--api.dashboard=true'
+  #     - '--providers.docker=true'
+  #     - '--providers.docker.exposedbydefault=false'
+  #   ports:
+  #     - 5432:80
+  #     - 3701:8080
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - internal
+  #     - default
+
+networks:
+  internal:
+
+volumes:
+  data:
