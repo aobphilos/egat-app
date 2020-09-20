@@ -28,8 +28,24 @@ module.exports = {
    * Actions
    */
   actions: {
+    clear: {
+      async handler() {
+        return this.adapter.clear();
+      },
+    },
+    import: {
+      params: {
+        clear: { type: 'boolean', default: false, optional: true, convert: true },
+        ppinitial: { type: 'string' },
+        year: { type: 'number', optional: true, default: 2020, convert: true },
+        month: { type: 'number', optional: true, default: 1, convert: true },
+      },
+      async handler(ctx) {
+        return this.importData(ctx);
+      },
+    },
     'sync-data': {
-      query: {
+      params: {
         clear: { type: 'boolean', default: false, optional: true, convert: true },
         ppinitial: { type: 'string' },
         year: { type: 'number', optional: true, default: 2020, convert: true },
@@ -54,30 +70,8 @@ module.exports = {
         month: { type: 'number', default: 1, convert: true },
       },
       async handler(ctx) {
-        const { clear, ...reqParams } = ctx.params;
-
         this.entityChanged('clear', ctx.broker);
-
-        ctx.broker.logger.info('[meter.load.profile][event][synced] - processing -', reqParams);
-
-        if (clear) {
-          const { year, month } = reqParams;
-          const startDate = new Date(`${year}-${month}-01`);
-          const endDate = new Date(`${year}-${month}-01`);
-          endDate.setMonth(month);
-          await this.model.destroy({
-            where: {
-              initialName: reqParams.ppinitial,
-              timeStamp: { [Op.gte]: startDate, [Op.lt]: endDate },
-            },
-          });
-        }
-
-        const data = await ctx.broker.call('v1.egat.meter.load.profile', reqParams);
-        if (data) {
-          await this.adapter.insertMany(data, { ignoreDuplicates: true });
-          ctx.broker.logger.info('[meter.load.profile][event][synced] - complete -', reqParams);
-        }
+        await this.importData(ctx);
       },
     },
   },
@@ -85,5 +79,36 @@ module.exports = {
   /**
    * Methods
    */
-  methods: {},
+  methods: {
+    cleanObject(dbItem) {
+      // Filter out the data from db object before sending it to the client
+      const { dataValues } = dbItem || {};
+      return dataValues || {};
+    },
+    async importData(ctx) {
+      const { clear, ...reqParams } = ctx.params;
+
+      ctx.broker.logger.info('[meter.load.profile][methods][synced] - processing -', reqParams);
+
+      if (clear) {
+        const { year, month } = reqParams;
+        const startDate = new Date(`${year}-${month}-01`);
+        const endDate = new Date(`${year}-${month}-01`);
+        endDate.setMonth(month);
+        await this.model.destroy({
+          where: {
+            initialName: reqParams.ppinitial,
+            timeStamp: { [Op.gte]: startDate, [Op.lt]: endDate },
+          },
+        });
+      }
+
+      const data = await ctx.broker.call('v1.egat.meter.load.profile', reqParams);
+      return this.adapter
+        .insertMany(data, { ignoreDuplicates: true })
+        .then(() =>
+          ctx.broker.logger.info('[meter.load.profile][methods][synced] - complete -', reqParams)
+        );
+    },
+  },
 };

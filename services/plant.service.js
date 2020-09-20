@@ -28,8 +28,21 @@ module.exports = {
    * Actions
    */
   actions: {
+    clear: {
+      async handler() {
+        return this.adapter.clear();
+      },
+    },
+    import: {
+      params: {
+        clear: { type: 'boolean', default: false, optional: true, convert: true },
+      },
+      async handler(ctx) {
+        return this.importData(ctx);
+      },
+    },
     'sync-data': {
-      query: {
+      params: {
         clear: { type: 'boolean', default: false, optional: true, convert: true },
       },
       handler(ctx) {
@@ -48,22 +61,8 @@ module.exports = {
         clear: { type: 'boolean', default: false, optional: true, convert: true },
       },
       async handler(ctx) {
-        const { clear } = ctx.params;
-
         this.entityChanged('clear', ctx.broker);
-
-        ctx.broker.logger.info('[plant][event][plant.synced] - processing');
-
-        if (clear) {
-          await this.model.destroy({ truncate: true });
-        }
-
-        const data = await ctx.broker.call('v1.egat.plant', {});
-
-        if (data) {
-          await this.adapter.insertMany(data, { ignoreDuplicates: true });
-          ctx.broker.logger.info('[plant][event][plant.synced] - complete');
-        }
+        await this.importData(ctx);
       },
     },
   },
@@ -76,6 +75,25 @@ module.exports = {
       // Filter out the data from db object before sending it to the client
       const { dataValues } = dbItem || {};
       return dataValues || {};
+    },
+
+    async importData(ctx) {
+      ctx.broker.logger.info('[plant][methods][import] - processing');
+      const { clear } = ctx.params;
+
+      if (clear) {
+        await this.adapter.clear();
+      }
+
+      const result = {};
+      const data = await ctx.broker.call('v1.egat.plant', {});
+      if (data) {
+        const rows = await this.adapter.insertMany(data, { ignoreDuplicates: true });
+        ctx.broker.logger.info('[plant][methods][import] - complete');
+        Object.assign(result, { data: rows.map(this.cleanObject) });
+      }
+
+      return { status: 'Completed', ...result };
     },
   },
   // afterConnected() {

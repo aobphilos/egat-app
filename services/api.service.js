@@ -82,6 +82,8 @@ module.exports = {
 
           'GET /meter/load/profiles/list': 'v1.meter.load.profiles.list',
           'POST /meter/load/profiles/sync-data': 'v1.meter.load.profiles.sync-data',
+
+          'POST /batch/import': 'v1.batch.import',
         },
       },
     ],
