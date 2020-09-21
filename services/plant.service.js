@@ -34,6 +34,11 @@ module.exports = {
       },
     },
     import: {
+      bulkhead: {
+        enabled: true,
+        concurrency: 8,
+        maxQueueSize: 0,
+      },
       params: {
         clear: { type: 'boolean', default: false, optional: true, convert: true },
       },
@@ -87,10 +92,12 @@ module.exports = {
 
       const result = {};
       const data = await ctx.broker.call('v1.egat.plant', {});
-      if (data) {
+      if (Array.isArray(data) && data.length > 0) {
         const rows = await this.adapter.insertMany(data, { ignoreDuplicates: true });
-        ctx.broker.logger.info('[plant][methods][import] - complete');
+        ctx.broker.logger.info('[plant][methods][import] - completed');
         Object.assign(result, { data: rows.map(this.cleanObject) });
+      } else {
+        ctx.broker.logger.warn('[plant][methods][import] - skipped');
       }
 
       return { status: 'Completed', ...result };

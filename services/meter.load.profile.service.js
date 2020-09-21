@@ -34,6 +34,11 @@ module.exports = {
       },
     },
     import: {
+      bulkhead: {
+        enabled: true,
+        concurrency: 8,
+        maxQueueSize: 0,
+      },
       params: {
         clear: { type: 'boolean', default: false, optional: true, convert: true },
         ppinitial: { type: 'string' },
@@ -104,11 +109,17 @@ module.exports = {
       }
 
       const data = await ctx.broker.call('v1.egat.meter.load.profile', reqParams);
-      return this.adapter
-        .insertMany(data, { ignoreDuplicates: true })
-        .then(() =>
-          ctx.broker.logger.info('[meter.load.profile][methods][synced] - complete -', reqParams)
-        );
+      if (Array.isArray(data) && data.length > 0) {
+        return this.adapter
+          .insertMany(data, { ignoreDuplicates: true })
+          .then(() =>
+            ctx.broker.logger.info('[meter.load.profile][methods][synced] - completed -', reqParams)
+          );
+      }
+
+      ctx.broker.logger.warn('[meter.load.profile][methods][synced] - skipped -', reqParams);
+
+      return Promise.resolve({});
     },
   },
 };

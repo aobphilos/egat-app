@@ -75,7 +75,7 @@ module.exports = {
     async importPlantData(minYear, maxYear) {
       const defaultMaxYear = maxYear || new Date().getFullYear();
       const defaultMinYear = minYear || defaultMaxYear - 1;
-      const { data } = await this.broker.call('v1.plants.import');
+      const { data } = await this.broker.call('v1.plants.import', {}, { timeout: 0 });
       const jobs = [];
       if (Array.isArray(data)) {
         for (let year = defaultMinYear; year <= defaultMaxYear; year++) {
@@ -92,9 +92,13 @@ module.exports = {
       return { jobs };
     },
     async importMeterLoadProfileData(jobs) {
-      await Promise.map(jobs, (job) => this.broker.call('v1.meter.load.profiles.import', job), {
-        concurrency: 8,
-      });
+      await Promise.map(
+        jobs,
+        async (job) => this.broker.call('v1.meter.load.profiles.import', job, { timeout: 0 }),
+        {
+          concurrency: 6,
+        }
+      );
     },
   },
 };
