@@ -1,4 +1,15 @@
+const _ = require('lodash');
 const { DataTypes, Deferrable } = require('sequelize');
+
+function validateInteger(value, name) {
+  const validData = _.toInteger(value);
+  this.setDataValue(name, _.isNaN(validData) ? 0 : validData);
+}
+
+function validateDecimal(value, name) {
+  const validData = _.toNumber(value);
+  this.setDataValue(name, _.isNaN(validData) ? 0 : validData);
+}
 
 const Weather3HoursObservationSchema = {
   name: 'weather_3hours_observation',
@@ -27,17 +38,18 @@ const Weather3HoursObservationSchema = {
         // - `Deferrable.NOT` - Don't defer the checks at all (default) - This won't allow you to dynamically change the rule in a transaction
       },
     },
-    stationPressure: DataTypes.DECIMAL,
-    meanSeaLevelPressure: DataTypes.DECIMAL,
-    airTemperature: DataTypes.DECIMAL,
-    dewPoint: DataTypes.DECIMAL,
-    relativeHumidity: DataTypes.DECIMAL,
-    vaporPressure: DataTypes.DECIMAL,
-    landVisibility: DataTypes.DECIMAL,
-    windDirection: DataTypes.INTEGER,
-    windSpeed: DataTypes.DECIMAL,
-    rainfall: DataTypes.DECIMAL,
-    rainfall24Hr: DataTypes.DECIMAL,
+
+    stationPressure: { type: DataTypes.DECIMAL, set: validateDecimal },
+    meanSeaLevelPressure: { type: DataTypes.DECIMAL, set: validateDecimal },
+    airTemperature: { type: DataTypes.DECIMAL, set: validateDecimal },
+    dewPoint: { type: DataTypes.DECIMAL, set: validateDecimal },
+    relativeHumidity: { type: DataTypes.DECIMAL, set: validateDecimal },
+    vaporPressure: { type: DataTypes.DECIMAL, set: validateDecimal },
+    landVisibility: { type: DataTypes.DECIMAL, set: validateDecimal },
+    windDirection: { type: DataTypes.INTEGER, set: validateInteger },
+    windSpeed: { type: DataTypes.DECIMAL, set: validateDecimal },
+    rainfall: { type: DataTypes.DECIMAL, set: validateDecimal },
+    rainfall24Hr: { type: DataTypes.DECIMAL, set: validateDecimal },
   },
   options: {
     timestamps: false,

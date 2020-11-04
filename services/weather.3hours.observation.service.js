@@ -1,5 +1,5 @@
 'use strict';
-
+const _ = require('lodash');
 const DbService = require('moleculer-db');
 
 const { DbAdapter } = require('../lib/db.adapter');
@@ -18,7 +18,12 @@ module.exports = {
   /**
    * Settings
    */
-  settings: {},
+  settings: {
+    UPDATE_KEYS_WHEN_DUPLICATES: _.pull(
+      Object.keys(Weather3HoursObservation.define),
+      'wmoStationNumber'
+    ),
+  },
 
   /**
    * Dependencies
@@ -61,8 +66,8 @@ module.exports = {
       if (Array.isArray(data) && data.length > 0) {
         // const rows = await this.adapter.insertMany(data);
         const rows = await this.adapter.insertMany(data, {
-          ignoreDuplicates: false,
-          updateOnDuplicate: Object.keys(Weather3HoursObservation.define),
+          ignoreDuplicates: true,
+          // updateOnDuplicate: this.settings.UPDATE_KEYS_WHEN_DUPLICATES,
         });
         ctx.broker.logger.info('[weather.3hours.observation][methods][doInsertMany] - completed');
         Object.assign(result, { data: rows });

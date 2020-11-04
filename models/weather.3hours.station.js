@@ -1,4 +1,10 @@
+const _ = require('lodash');
 const { DataTypes } = require('sequelize');
+
+function validateDecimal(value, name) {
+  const validData = _.toNumber(value);
+  this.setDataValue(name, _.isNaN(validData) ? 0 : validData);
+}
 
 const Weather3HoursStationSchema = {
   name: 'weather_3hours_station',
@@ -7,8 +13,8 @@ const Weather3HoursStationSchema = {
     stationNameThai: DataTypes.STRING,
     stationNameEnglish: DataTypes.STRING,
     province: DataTypes.STRING,
-    latitude: DataTypes.DECIMAL,
-    longitude: DataTypes.DECIMAL,
+    latitude: { type: DataTypes.DECIMAL, set: validateDecimal },
+    longitude: { type: DataTypes.DECIMAL, set: validateDecimal },
   },
   options: {
     timestamps: false,

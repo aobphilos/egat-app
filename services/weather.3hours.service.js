@@ -1,5 +1,5 @@
 'use strict';
-
+const _ = require('lodash');
 const { DateTime } = require('luxon');
 const Cron = require('moleculer-cron');
 const { Weather3HoursStation, Weather3HoursObservation } = require('../models');
@@ -74,27 +74,21 @@ module.exports = {
     },
 
     buildStationObject(data) {
-      return Object.keys(Weather3HoursStation.define).reduce((prev, key) => {
-        prev[key] = data[key];
-        return prev;
-      }, {});
+      const { observation, ...result } = data;
+      return { ...result };
     },
 
     buildObservationObject(data) {
       const { wmoStationNumber, observation } = data;
-      const result = Object.keys(Weather3HoursObservation.define).reduce((prev, key) => {
-        prev[key] = observation[key];
-        return prev;
-      }, {});
-
       const dateTime = DateTime.fromFormat(
         observation.dateTime,
         this.settings.dateTimeFormat
       ).toJSDate();
-      Object.assign(result, { wmoStationNumber });
-      Object.assign(result, { dateTime });
-
-      return result;
+      return {
+        ...observation,
+        wmoStationNumber,
+        dateTime,
+      };
     },
 
     async updateData(ctx) {
@@ -110,12 +104,12 @@ module.exports = {
 
       const stationData = station.map(this.buildStationObject);
       await ctx.broker.call('v1.weather.3hours.station.bulkCreate', {
-        data: stationData,
+        data: _.uniqBy(stationData, 'wmoStationNumber'),
       });
 
       const observationData = station.map(this.buildObservationObject);
       await ctx.broker.call('v1.weather.3hours.observation.bulkCreate', {
-        data: observationData,
+        data: _.uniqBy(observationData, 'wmoStationNumber'),
       });
 
       ctx.broker.logger.info('[weather.3hours][methods][updateData] - completed');
