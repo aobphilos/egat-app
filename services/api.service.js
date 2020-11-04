@@ -77,6 +77,8 @@ module.exports = {
           'GET /egat/plant': 'v1.egat.plant',
           'GET /egat/meter/load/profile': 'v1.egat.meter.load.profile',
 
+          'GET /tmd/weather/3hours': 'v1.tmd.weather.get3hours',
+
           'GET /plants/list': 'v1.plants.list',
           'POST /plants/sync-data': 'v1.plants.sync-data',
 
